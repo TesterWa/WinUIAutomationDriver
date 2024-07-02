@@ -1,0 +1,50 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "WinUIAutomationDriver/1.0.0": {
+        "dependencies": {
+          "Interop.UIAutomationClient": "10.19041.0",
+          "Microsoft.NETFramework.ReferenceAssemblies.net472": "1.0.3"
+        },
+        "runtime": {
+          "WinUIAutomationDriver.dll": {}
+        }
+      },
+      "Interop.UIAutomationClient/10.19041.0": {
+        "runtime": {
+          "lib/netcoreapp3.0/Interop.UIAutomationClient.dll": {
+            "assemblyVersion": "10.0.19041.0",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Microsoft.NETFramework.ReferenceAssemblies.net472/1.0.3": {}
+    }
+  },
+  "libraries": {
+    "WinUIAutomationDriver/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Interop.UIAutomationClient/10.19041.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Me5vKNZ1JSg6txTsPQXaWx7fVNh+fmcUPPwtDKJtqvbMM0N8aoa/l/QPolkJIRnasCabCNt4v2zG4p1Q9HU98A==",
+      "path": "interop.uiautomationclient/10.19041.0",
+      "hashPath": "interop.uiautomationclient.10.19041.0.nupkg.sha512"
+    },
+    "Microsoft.NETFramework.ReferenceAssemblies.net472/1.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0E7evZXHXaDYYiLRfpyXvCh+yzM2rNTyuZDI+ZO7UUqSc6GfjePiXTdqJGtgIKUwdI81tzQKmaWprnUiPj9hAw==",
+      "path": "microsoft.netframework.referenceassemblies.net472/1.0.3",
+      "hashPath": "microsoft.netframework.referenceassemblies.net472.1.0.3.nupkg.sha512"
+    }
+  }
+}

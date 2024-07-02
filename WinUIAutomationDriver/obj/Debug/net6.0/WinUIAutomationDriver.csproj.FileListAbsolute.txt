@@ -1,0 +1,12 @@
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/bin/Debug/net6.0/WinUIAutomationDriver.deps.json
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/bin/Debug/net6.0/WinUIAutomationDriver.dll
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/bin/Debug/net6.0/WinUIAutomationDriver.pdb
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.csproj.AssemblyReference.cache
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.AssemblyInfoInputs.cache
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.AssemblyInfo.cs
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.csproj.CoreCompileInputs.cache
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.dll
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/refint/WinUIAutomationDriver.dll
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/WinUIAutomationDriver.pdb
+/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/obj/Debug/net6.0/ref/WinUIAutomationDriver.dll

@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "26FamPD55rJpwlwW9njlr7pbKaF7q8xJTIMeMQDDPnvp/YdY874wO19Bp3tvBHsZRhuLJHJ1ZDZvhp8M0+s3BA==",
+  "success": true,
+  "projectFilePath": "/Users/dadong/RiderProjects/WinUIAutomationDriver/WinUIAutomationDriver/WinUIAutomationDriver.csproj",
+  "expectedPackageFiles": [
+    "/Users/dadong/.nuget/packages/interop.uiautomationclient/10.19041.0/interop.uiautomationclient.10.19041.0.nupkg.sha512",
+    "/Users/dadong/.nuget/packages/microsoft.netframework.referenceassemblies.net472/1.0.3/microsoft.netframework.referenceassemblies.net472.1.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
