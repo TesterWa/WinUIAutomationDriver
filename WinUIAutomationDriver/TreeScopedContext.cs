@@ -13,7 +13,7 @@ namespace WinUIAutomationDriver
        private TreeScope scope = TreeScope.TreeScope_Descendants;
        /// <summary>
        /// 设置查找元素的作用域
-       /// 多线程环境可能会出现作用域异常的问题
+       /// 多线程环境可能会出现作用域错乱的问题
        /// </summary>
        /// <param name="scope"></param>
         public void SetScoped(TreeScope scope)

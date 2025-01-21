@@ -1,17 +1,122 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{6FA052B4-1A0E-40C1-BAE3-5DDCE6221547}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>WinUIAutomationDriver</RootNamespace>
+    <AssemblyName>WinUIAutomationDriver</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <NuGetPackageImportStamp>f31c6b08</NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Interop.UIAutomationClient, Version=10.0.19041.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Interop.UIAutomationClient.10.19041.0\lib\net45\Interop.UIAutomationClient.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="condition\UIAutomationAndConditionBuilder.cs" />
+    <Compile Include="condition\UIAutomationConditionBuilder.cs" />
+    <Compile Include="condition\UIAutomationOrConditionBuilder.cs" />
+    <Compile Include="Convert2UIAutomationElement.cs" />
+    <Compile Include="CUIAutomationDriver.cs" />
+    <Compile Include="Enum1\ClickablePosition.cs" />
+    <Compile Include="Enum1\UIAutomationElementControlType.cs" />
+    <Compile Include="Enum1\UIAutomationElementEvent.cs" />
+    <Compile Include="Enum1\UIAutomationElementPattern.cs" />
+    <Compile Include="Enum1\UIAutomationElementProperty.cs" />
+    <Compile Include="Event\UIAutoamtionEventArgs.cs" />
+    <Compile Include="Event\UIAutomationEventHandler.cs" />
+    <Compile Include="Interface\IUIAutomationAutomationIdFind.cs" />
+    <Compile Include="Interface\IUIAutomationAutomationXpathFind.cs" />
+    <Compile Include="Interface\IUIAutomationClassFind.cs" />
+    <Compile Include="Interface\IUIAutomationConditionFind.cs" />
+    <Compile Include="Interface\IUIAutomationControlTypeFind.cs" />
+    <Compile Include="Interface\IUIAutomationNameFind.cs" />
+    <Compile Include="Interface\IUIAutomationOrConditionBuilder.cs" />
+    <Compile Include="Interface\IUIAutomationTreeScope.cs" />
+    <Compile Include="Interface\IUIFindElementContext.cs" />
+    <Compile Include="Interface\IUIAutomationLocalizedControlTypeFind.cs" />
+    <Compile Include="Interface\IUIAutomationAndConditionBuilder.cs" />
+    <Compile Include="Interface\IUIAutomationConditionBuilder.cs" />
+    <Compile Include="Pattern\BasePattern.cs" />
+    <Compile Include="Pattern\InvokePattern.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RegisterAutomationWindowClosedEventHandlerException.cs" />
+    <Compile Include="RegisterAutomationWindowEventHandlerException.cs" />
+    <Compile Include="RegisterAutomationWindowOpendEventHandlerException.cs" />
+    <Compile Include="TreeScopedContext.cs" />
+    <Compile Include="UIAutomationApplicaitonException.cs" />
+    <Compile Include="UIAutomationBy.cs" />
+    <Compile Include="UIAutomationClickableNotFoundException.cs" />
+    <Compile Include="UIAutomationComboboxElementNotSelectItemException.cs" />
+    <Compile Include="UIAutomationCondition.cs" />
+    <Compile Include="UIAutomationDataGridElement.cs" />
+    <Compile Include="UIAutomationDataGridHeaderElement.cs" />
+    <Compile Include="UIAutomationDataGridHeaderItemElement.cs" />
+    <Compile Include="UIAutomationDataGridRowCellElement.cs" />
+    <Compile Include="UIAutomationDataGridRowElement.cs" />
+    <Compile Include="UIAutomationDataGridScrollBarElement.cs" />
+    <Compile Include="UIAutomationDocumentContext.cs" />
+    <Compile Include="UIAutomationElement.cs" />
+    <Compile Include="UIAutomationElementException.cs" />
+    <Compile Include="UIAutomationElementNotFoundChildException.cs" />
+    <Compile Include="UIAutomationElementNotFoundException.cs" />
+    <Compile Include="UIAutomationElementNotSupportPattern.cs" />
+    <Compile Include="UIAutomationElementTreeLocalcache.cs" />
+    <Compile Include="UIAutomationUntil.cs" />
+    <Compile Include="WinUIAutomationOptions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Interop.UIAutomationClient.10.19041.0\build\Interop.UIAutomationClient.targets" Condition="Exists('..\packages\Interop.UIAutomationClient.10.19041.0\build\Interop.UIAutomationClient.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。启用“NuGet 程序包还原”可下载这些程序包。有关详细信息，请参阅 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
     </PropertyGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
-      <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-    </ItemGroup>
-
+    <Error Condition="!Exists('..\packages\Interop.UIAutomationClient.10.19041.0\build\Interop.UIAutomationClient.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Interop.UIAutomationClient.10.19041.0\build\Interop.UIAutomationClient.targets'))" />
+  </Target>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
 </Project>

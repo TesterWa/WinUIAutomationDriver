@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Interop.UIAutomationClient;
 using WinUIAutomationDriver.Enum1;
+using WinUIAutomationDriver.Interface;
 
 namespace WinUIAutomationDriver
 {
@@ -81,6 +82,14 @@ namespace WinUIAutomationDriver
             };
         }
 
+        public static UIAutomationBy Xpath(string xpath)
+        {
+            return new UIAutomationBy()
+            {
+                findElementMethod = context => (context as IUIAutomationAutomationXpathFind).FindElementByXpath(xpath),
+                findElementsMethod = context => (context as IUIAutomationAutomationXpathFind).FindElementsByXpath(xpath)
+            };
+        }
 
     }
 }

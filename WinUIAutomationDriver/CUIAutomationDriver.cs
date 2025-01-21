@@ -8,16 +8,19 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.XPath;
 using Interop.UIAutomationClient;
 using WinUIAutomationDriver.condition;
 using WinUIAutomationDriver.Enum1;
+using WinUIAutomationDriver.Event;
 using WinUIAutomationDriver.Interface;
 using TreeScope = Interop.UIAutomationClient.TreeScope;
 
 namespace WinUIAutomationDriver
 {
-    public class CUIAutomationDriver : IUIFindElementContext, IUIAutomationAutomationIdFind, IUIAutomationClassFind, IUIAutomationControlTypeFind, IUIAutomationLocalizedControlTypeFind, IUIAutomationNameFind, IUIAutomationConditionFind, IUIAutomationTreeScope
+    public class CUIAutomationDriver : IUIFindElementContext, IUIAutomationAutomationIdFind, IUIAutomationClassFind, IUIAutomationControlTypeFind, IUIAutomationLocalizedControlTypeFind, IUIAutomationNameFind, IUIAutomationConditionFind, IUIAutomationTreeScope, IUIAutomationAutomationXpathFind
     {
         private IntPtr _proIntPtr;
         private IUIAutomation _client;
@@ -28,6 +31,26 @@ namespace WinUIAutomationDriver
         private TreeScope scope = TreeScope.TreeScope_Descendants;
         private TreeScopedContext treeScopedContext;
         private Func<IUIAutomationCondition, object> searcher;
+        private IList<UIAutomationElement> handles;
+        private readonly object lockobj = new object();
+        private UIAutomationElement currentHandle;
+        private XDocument currentdom;
+        private UIAutomationDocumentContext documentContext;
+        private const string dialogClass = "#32770";
+        //private IList<UIAutomationElement> localcacheUiautomationElements = new List<UIAutomationElement>();
+        public UIAutomationElement CurrentHandle
+        {
+            get
+            {
+                if (currentHandle == null)
+                    return this.Root;
+                return currentHandle;
+            }
+            set
+            {
+                currentHandle = value;
+            }
+        }
         public IUIAutomationTreeWalker RawTreeWalker
         {
             get
@@ -51,6 +74,7 @@ namespace WinUIAutomationDriver
                 return this._client.ControlViewWalker;
             }
         }
+
         public IntPtr ProIntPtr
         {
             get
@@ -97,12 +121,88 @@ namespace WinUIAutomationDriver
                 appIntPtr = this._appProc.MainWindowHandle;
             }
 
-            this.ProIntPtr = appIntPtr;
+            this._proIntPtr = appIntPtr;
             UIAutomationElement root = this.ElementFromHandle(appIntPtr);
             this.treeScopedContext = new TreeScopedContext();
             _root = root;
+            this.handles = new List<UIAutomationElement>() { root };
+            this.documentContext = new UIAutomationDocumentContext(this);
+
+        }
+        /// <summary>
+        /// 注册window的关闭监听事件
+        /// </summary>
+        /// <param name="window">当前window</param>
+        public void RegisterAutomationWindowClosedEventHandler(UIAutomationElement window)
+        {
+            try
+            {
+                this.RegisterAutomationEventHandler(window, UIAutomationElementEvent.WindowClosed, TreeScope.TreeScope_Element);
+            }
+            catch (Exception e)
+            {
+                throw new RegisterAutomationWindowClosedEventHandlerException("register window closed event handler error", e);
+            }
+
         }
 
+        /// <summary>
+        /// 注册window的窗口打开事件，窗口打开完毕后应该立即给窗口注册关闭事件
+        /// </summary>
+        /// <param name="window">window可以是当前window下的treeScope作用域范围内的window</param>
+        public void RegisterAutomationWindowOpenedEventHandler(UIAutomationElement window)
+        {
+            try
+            {
+                this.RegisterAutomationEventHandler(window, UIAutomationElementEvent.WindowOpened);
+            }
+            catch (Exception ex)
+            {
+                throw new RegisterAutomationWindowOpendEventHandlerException("register window opened event handler error", ex);
+            }
+        }
+
+        /// <summary>
+        /// 注册事件
+        /// </summary>
+        /// <param name="element">目标控件</param>
+        /// <param name="e">事件枚举 类型 UIAutomationElementEvent</param>
+        /// <param name="scope">注册事件的作用域</param>
+        public void RegisterAutomationEventHandler(UIAutomationElement element, UIAutomationElementEvent e, TreeScope scope = TreeScope.TreeScope_Descendants)
+        {
+            RegisterAutomationEventHandlerInternal(element, scope, e);
+        }
+
+        private void RegisterAutomationEventHandlerInternal(UIAutomationElement element, TreeScope scope, UIAutomationElementEvent e)
+        {
+            if (element == null)
+                throw new UIAutomationElementException("注册事件对象不能为空！");
+            IUIAutomationElement baseComElement = element.GetBaseCOMElement();
+            UIAutomationEventHandler uiAutomationEventHandler = new UIAutomationEventHandler();
+            uiAutomationEventHandler.UIAutomaitonEventHander += UIAutomaitonEventHander;
+            this._client.AddAutomationEventHandler((int)e, baseComElement, scope, null, uiAutomationEventHandler);
+        }
+        private void UIAutomaitonEventHander(object sender, UIAutomationEventArgs args)
+        {
+
+            UIAutomationElementEvent uiAutomationElementEvent = args.Event;
+            UIAutomationElement window = Convert2UIAutomationElement.ConvertCOM2LocalElement(this, args.Element);
+            if (uiAutomationElementEvent == UIAutomationElementEvent.WindowOpened)
+            {
+                this.AddWindowHandle(window);
+                this.Root = window;
+                this.currentHandle = window;
+                //给新的window窗口绑定关闭事件
+                this.RegisterAutomationWindowClosedEventHandler(window);
+            }
+            else if (uiAutomationElementEvent == UIAutomationElementEvent.WindowClosed)
+            {
+                this.RemoveWindowHandle(window);
+                UIAutomationElement lastWindow = this.handles.LastOrDefault();
+                this.Root = lastWindow;
+                this.currentHandle = lastWindow;
+            }
+        }
         public IUIAutomationCondition CreateCondition(UIAutomationElementProperty automationPropertyId, object value)
         {
             IUIAutomationCondition uiAutomationCondition = this._client.CreatePropertyCondition((int)automationPropertyId, value);
@@ -142,34 +242,36 @@ namespace WinUIAutomationDriver
 
         private UIAutomationElement FindAlertInternal(string alertTitle, string alertContent, bool isFuzzMatchContent, bool isInnerApplication)
         {
-            UIAutomationElement domain = (UIAutomationElement)(isInnerApplication ? GetDesktopInElement(null) : GetDesktopElement());
-            UIAutoamtionAndConditionBuilder builder = new UIAutoamtionAndConditionBuilder();
-            builder.AddAndCondition(UIAutomationElementProperty.ControlType, UIAutomationElementControlType.Window).AddAndCondition(UIAutomationElementProperty.ClassName, "#32770");
-            if (!string.IsNullOrEmpty(alertTitle))
-            {
-                builder.AddAndCondition(UIAutomationElementProperty.Name, alertTitle);
-            }
-            IList<UIAutomationElement> uiAutomationElements = domain.FindElementsByCondition(isInnerApplication ? TreeScope.TreeScope_Descendants : TreeScope.TreeScope_Children, builder.Build(this));
-            if (uiAutomationElements == null || !uiAutomationElements.Any())
-                return default(UIAutomationElement);
-            if (string.IsNullOrEmpty(alertContent))
-                return uiAutomationElements.FirstOrDefault();
-            foreach (UIAutomationElement dialog in uiAutomationElements)
-            {
-                //                IUIAutomationElement textElement = dialog.FindElement(UIAutomationBy.Name(alertContent));
-                //                if (textElement == null)
-                //                    continue;
-                //                var check_result = isFuzzMatchContent ? textElement.CurrentName.Contains(alertContent) : textElement.CurrentName.Equals(alertContent);
-                //                if (check_result)
-                IList<UIAutomationElement> elementsByControlType = dialog.FindElementsByControlType(UIAutomationElementControlType.Text);
-                foreach (UIAutomationElement label in elementsByControlType)
+            UIAutomationElement domain = (UIAutomationElement) (isInnerApplication ? GetDesktopInElement(null) : GetDesktopElement());
+                UIAutoamtionAndConditionBuilder builder = new UIAutoamtionAndConditionBuilder();
+                builder.AddAndCondition(UIAutomationElementProperty.ControlType, UIAutomationElementControlType.Window).AddAndCondition(UIAutomationElementProperty.ClassName, dialogClass);
+                if (!string.IsNullOrEmpty(alertTitle))
                 {
-                    var check_result = isFuzzMatchContent ? label.CurrentName.Contains(alertContent) : label.CurrentName.Equals(alertContent);
-                    if (check_result)
-                        return dialog;
+                    builder.AddAndCondition(UIAutomationElementProperty.Name, alertTitle);
                 }
 
-            }
+                IList<UIAutomationElement> uiAutomationElements = domain.FindElementsByCondition(isInnerApplication ? TreeScope.TreeScope_Descendants : TreeScope.TreeScope_Children, builder.Build(this));
+                if (uiAutomationElements == null || !uiAutomationElements.Any())
+                    return default(UIAutomationElement);
+                if (string.IsNullOrEmpty(alertContent))
+                    return uiAutomationElements.FirstOrDefault();
+                foreach (UIAutomationElement dialog in uiAutomationElements)
+                {
+                    //                IUIAutomationElement textElement = dialog.FindElement(UIAutomationBy.Name(alertContent));
+                    //                if (textElement == null)
+                    //                    continue;
+                    //                var check_result = isFuzzMatchContent ? textElement.CurrentName.Contains(alertContent) : textElement.CurrentName.Equals(alertContent);
+                    //                if (check_result)
+                    IList<UIAutomationElement> elementsByControlType = dialog.FindElementsByControlType(UIAutomationElementControlType.Text);
+                    foreach (UIAutomationElement label in elementsByControlType)
+                    {
+                        var check_result = isFuzzMatchContent ? label.CurrentName.Contains(alertContent) : label.CurrentName.Equals(alertContent);
+                        if (check_result)
+                            return dialog;
+                    }
+
+                }
+           
 
             return default(UIAutomationElement);
         }
@@ -190,7 +292,7 @@ namespace WinUIAutomationDriver
             this._appProc.EnableRaisingEvents = true;
             Thread.Sleep(2000);
             this.isStartApp = true;
-            //WaitForProcessExit();//监听应用程序是否被手动关闭了
+            WaitForProcessExit();//监听应用程序是否被手动关闭了
         }
 
         private void _appProc_Exited(object sender, EventArgs e)
@@ -203,7 +305,7 @@ namespace WinUIAutomationDriver
         internal void ThrowIsApplicationExitException()
         {
             if (!this.isStartApp)
-                throw new UIAutomationApplicaitonException("应用程序终止运行！");
+                throw new UIAutomationApplicaitonException("应用程序退出或进程被终止！");
         }
         private void WaitForProcessExit()
         {
@@ -211,12 +313,25 @@ namespace WinUIAutomationDriver
             {
                 while (true)
                 {
-                    if (!this.isStartApp)
+                    if (WaitForPorcessExit())
+                    {
+                        this.isStartApp = false;
                         ThrowIsApplicationExitException();
+                    }
                     Thread.Sleep(1000);
                 }
 
             });
+        }
+
+        private bool WaitForPorcessExit()
+        {
+            Process appProc = this._appProc;
+            //            IntPtr appProcHandle = appProc.Handle;
+            int appProcId = appProc.Id;
+            Process process = Process.GetProcesses().FirstOrDefault(s=>s.Id.Equals(appProcId));
+            bool appProcHasExited = appProc.HasExited;
+            return appProcHasExited || process == null;
         }
         public void StopApp()
         {
@@ -224,6 +339,7 @@ namespace WinUIAutomationDriver
             {
                 try
                 {
+                    this.ClearWindowHandles();
                     this._appProc.Kill();
                     this._appProc = null;
                     this.isStartApp = false;
@@ -416,10 +532,52 @@ namespace WinUIAutomationDriver
         /// 获取应用内所有的window窗口
         /// </summary>
         /// <returns></returns>
-        public IList<UIAutomationElement> GetWindowElements()
+        public IList<UIAutomationElement> GetWindowHandles()
         {
-            return this._root.FindElementsByControlType(UIAutomationElementControlType.Window);
+            return this.handles;
         }
 
+        private void AddWindowHandle(UIAutomationElement window)
+        {
+            lock (lockobj)
+            {
+                this.handles.Add(window);
+            }
+        }
+
+        private void RemoveWindowHandle(UIAutomationElement window)
+        {
+            lock (lockobj)
+            {
+                this.handles.Remove(window);
+            }
+        }
+        private void ClearWindowHandles()
+        {
+            lock (lockobj)
+            {
+
+                this.handles.Clear();
+            }
+        }
+
+        internal UIAutomationDocumentContext GetAutomationDocumentContext()
+        {
+            return this.documentContext;
+        }
+        public UIAutomationElement FindElementByXpath(string xpath)
+        {
+            return this.documentContext.QuerySelectElementByXpath(xpath);
+        }
+
+        public IList<UIAutomationElement> FindElementsByXpath(string xpath)
+        {
+            return this.documentContext.QuerySelectElemenstByXpath(xpath);
+        }
+
+        public string GetPageSource()
+        {
+            return this.documentContext.DumpCurrentWindowXml();
+        }
     }
 }

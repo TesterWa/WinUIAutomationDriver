@@ -5,24 +5,39 @@ using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.XPath;
 using Interop.UIAutomationClient;
 using WinUIAutomationDriver.Enum1;
 using WinUIAutomationDriver.Interface;
 
 namespace WinUIAutomationDriver
 {
-    public class UIAutomationElement : IUIFindElementContext, IUIAutomationElement, IUIAutomationAutomationIdFind, IUIAutomationClassFind, IUIAutomationControlTypeFind, IUIAutomationLocalizedControlTypeFind, IUIAutomationNameFind, IUIAutomationConditionFind, IUIAutomationTreeScope
+    public class UIAutomationElement : IUIFindElementContext, IUIAutomationElement, IUIAutomationAutomationIdFind, IUIAutomationClassFind, IUIAutomationControlTypeFind, IUIAutomationLocalizedControlTypeFind, IUIAutomationNameFind, IUIAutomationConditionFind, IUIAutomationTreeScope, IUIAutomationAutomationXpathFind
     {
         private CUIAutomationDriver _driver;
         private IUIAutomationElement _baseElement;
         public string Description = "UIAutomationElement";
+
+        public string Id
+        {
+            get
+            {
+
+                return id;
+            }
+        }
+
+        private string id;
+
         public UIAutomationElement(CUIAutomationDriver driver, IUIAutomationElement baseELement)
         {
             if (baseELement == null)
                 throw new ArgumentNullException();
             this._driver = driver;
             this._baseElement = baseELement;
+            id = Guid.NewGuid().ToString();
         }
         public UIAutomationElement FindElement(UIAutomationBy @by)
         {
@@ -121,14 +136,14 @@ namespace WinUIAutomationDriver
 
         public virtual void Click()
         {
-           
+
             IUIAutomationInvokePattern uiAutomationInvokePattern = this.GetInvokePattern();
             uiAutomationInvokePattern.Invoke();
         }
 
         public virtual void DoubleClick()
         {
-           
+
             IUIAutomationInvokePattern uiAutomationInvokePattern = this.GetInvokePattern();
             uiAutomationInvokePattern.Invoke();
             uiAutomationInvokePattern.Invoke();
@@ -137,7 +152,7 @@ namespace WinUIAutomationDriver
 
         public string GetValue()
         {
-           
+
             IUIAutomationValuePattern uiAutomationValuePattern = GetValuePattern();
             string currentValue = uiAutomationValuePattern.CurrentValue;
             return currentValue;
@@ -145,7 +160,7 @@ namespace WinUIAutomationDriver
 
         public void Clear()
         {
-            
+
 
             IUIAutomationValuePattern uiAutomationValuePattern = GetValuePattern();
             uiAutomationValuePattern.SetValue("");
@@ -155,19 +170,32 @@ namespace WinUIAutomationDriver
         public UIAutomationElement GetNextFieldElementFormPoint()
         {
             tagRECT currentBoundingRectangle = this.CurrentBoundingRectangle;
-            int x = currentBoundingRectangle.right+20;
+            int x = currentBoundingRectangle.right + 20;
             int y = currentBoundingRectangle.top + (currentBoundingRectangle.bottom - currentBoundingRectangle.top) / 2;
-            UIAutomationElement uiAutomationElement = this._driver.ElementFromPoint(new Point(x,y));
+            UIAutomationElement uiAutomationElement = this._driver.ElementFromPoint(new Point(x, y));
             return uiAutomationElement;
         }
         public void Send(string value)
         {
-           
+
             IUIAutomationValuePattern uiAutomationValuePattern = GetValuePattern();
-            this.SetFocus();
-            uiAutomationValuePattern.SetValue(value);
+            try
+            {
+                this.SetFocus();
+                uiAutomationValuePattern.SetValue(value);
+            }
+            catch (Exception ex)
+            {
+                string exMessage = ex.Message;
+                ThrowUIAutomationElementInvalidOperationException(exMessage);
+            }
         }
 
+        private void ThrowUIAutomationElementInvalidOperationException(string message)
+        {
+            if (message.Contains("HRESULT:0x80040200"))
+                throw new InvalidOperationException("操作元素时出现异常，请检查元素是否可见、可操作！");
+        }
         public void Select(string value)
         {
             if (this.CurrentControlType != (int)UIAutomationElementControlType.ComboBox)
@@ -179,26 +207,35 @@ namespace WinUIAutomationDriver
             //            IUIAutomationExpandCollapsePattern uiAutomationExpandCollapsePattern = this.CheckElementSupportPattren<IUIAutomationExpandCollapsePattern>(UIA_PatternIds.UIA_ExpandCollapsePatternId);
             //            uiAutomationExpandCollapsePattern.Collapse();
             //            IUIAutomationSelectionItemPattern uiAutomationSelectionItemPattern = this.CheckElementSupportPattren<IUIAutomationSelectionItemPattern>(UIA_PatternIds.UIA_SelectionItemPatternId);
-            UIAutomationElement selectList = this.FindElement(UIAutomationBy.ControlType(UIAutomationElementControlType.List));
-            if (selectList == null)
-                throw new UIAutomationElementNotFoundException("未找到可选择列表！");
-            IList<UIAutomationElement> uiAutomationElements = selectList.FindElementsByControlType(UIAutomationElementControlType.ListItem);
-            if (uiAutomationElements == null || !uiAutomationElements.Any())
-                throw new UIAutomationElementNotFoundException("该列表下没有任何可操作的项！");
-            bool selected = false;
-            foreach (UIAutomationElement uiAutomationElement in uiAutomationElements)
+            try
             {
-                if (uiAutomationElement.CurrentName.Equals(value))
+                UIAutomationElement selectList = this.FindElement(UIAutomationBy.ControlType(UIAutomationElementControlType.List));
+                if (selectList == null)
+                    throw new UIAutomationElementNotFoundException("未找到可选择列表！");
+                IList<UIAutomationElement> uiAutomationElements = selectList.FindElementsByControlType(UIAutomationElementControlType.ListItem);
+                if (uiAutomationElements == null || !uiAutomationElements.Any())
+                    throw new UIAutomationElementNotFoundException("该列表下没有任何可操作的项！");
+                bool selected = false;
+                foreach (UIAutomationElement uiAutomationElement in uiAutomationElements)
                 {
-                    IUIAutomationSelectionItemPattern automationSelectionItemPattern = uiAutomationElement.CheckElementSupportPattren<IUIAutomationSelectionItemPattern>(UIAutomationElementPattern.SelectionItemPattern);
-                    automationSelectionItemPattern.Select();
-                    selected = true;
-                    break;
+                    if (uiAutomationElement.CurrentName.Equals(value))
+                    {
+                        IUIAutomationSelectionItemPattern automationSelectionItemPattern = uiAutomationElement.CheckElementSupportPattren<IUIAutomationSelectionItemPattern>(UIAutomationElementPattern.SelectionItemPattern);
+                        automationSelectionItemPattern.Select();
+                        selected = true;
+                        break;
 
+                    }
                 }
+                if (!selected)
+                    throw new UIAutomationComboboxElementNotSelectItemException("选择项失败；没有匹配到项！");
             }
-            if (!selected)
-                throw new UIAutomationComboboxElementNotSelectItemException("选择项失败；没有匹配到项！");
+            catch (Exception exception)
+            {
+                ThrowUIAutomationElementInvalidOperationException(exception.Message);
+            }
+
+
         }
 
         public IUIAutomationInvokePattern GetInvokePattern()
@@ -222,13 +259,13 @@ namespace WinUIAutomationDriver
             return currentPattern;
         }
 
-        public Point GetClickPoint()
+        public System.Drawing.Point GetClickPoint()
         {
             tagPOINT tagPoint = new tagPOINT();
             int clickablePoint = this.GetClickablePoint(out tagPoint);
             if (clickablePoint == 0)
                 throw new UIAutomationClickableNotFoundException("未找到可点击的点！");
-            return new Point() { X = tagPoint.x, Y = tagPoint.y };
+            return new System.Drawing.Point() { X = tagPoint.x, Y = tagPoint.y };
         }
 
         public Point GetClickPoint2(ClickablePosition clickablePosition)
@@ -249,7 +286,7 @@ namespace WinUIAutomationDriver
                 case ClickablePosition.RIGHT_TOP:
                     return new Point() { X = boundingRectangle.right, Y = boundingRectangle.top };
                 case ClickablePosition.LEFT_CENTER_TOP:
-                    return new Point(){X = boundingRectangle.left+width/2,Y= boundingRectangle.top};
+                    return new Point() { X = boundingRectangle.left + width / 2, Y = boundingRectangle.top };
                 case ClickablePosition.TOP_CENTER_LEFT:
                     return new Point() { X = boundingRectangle.left, Y = boundingRectangle.top + height / 2 };
             }
@@ -273,7 +310,7 @@ namespace WinUIAutomationDriver
         {
             return GetFirstChildElementInternal();
         }
-        public UIAutomationElement GetParentElementInternal()
+        private UIAutomationElement GetParentElementInternal()
         {
             return Convert2UIAutomationElement.ConvertCOM2LocalElement(this._driver, this._driver.RawTreeWalker.GetParentElement(this._baseElement));
         }
@@ -282,7 +319,7 @@ namespace WinUIAutomationDriver
         {
             return GetParentElementInternal();
         }
-        public UIAutomationElement GetPreviousElementInternal()
+        private UIAutomationElement GetPreviousElementInternal()
         {
             return Convert2UIAutomationElement.ConvertCOM2LocalElement(this._driver, this._driver.RawTreeWalker.GetPreviousSiblingElement(this._baseElement));
         }
@@ -291,7 +328,7 @@ namespace WinUIAutomationDriver
         {
             return GetPreviousElementInternal();
         }
-        public UIAutomationElement GetNormalizeElementInternal()
+        private UIAutomationElement GetNormalizeElementInternal()
         {
 
             return Convert2UIAutomationElement.ConvertCOM2LocalElement(this._driver, this._driver.RawTreeWalker.NormalizeElement(this._baseElement));
@@ -301,7 +338,7 @@ namespace WinUIAutomationDriver
 
             return GetNormalizeElementInternal();
         }
-        public UIAutomationElement GetLastElementInternal()
+        private UIAutomationElement GetLastElementInternal()
         {
 
             return Convert2UIAutomationElement.ConvertCOM2LocalElement(this._driver, this._driver.RawTreeWalker.GetLastChildElement(this._baseElement));
@@ -638,6 +675,10 @@ namespace WinUIAutomationDriver
 
         }
 
+        internal IUIAutomationElement GetBaseCOMElement()
+        {
+            return this._baseElement;
+        }
         public static bool operator ==(UIAutomationElement one, UIAutomationElement two)
         {
             if ((object)one == (object)two)
@@ -661,6 +702,68 @@ namespace WinUIAutomationDriver
             }
 
             return false;
+        }
+
+        public UIAutomationElement FindElementByXpath(string xpath)
+        {
+            UIAutomationDocumentContext uiAutomationDocumentContext = _driver.GetAutomationDocumentContext();
+            //            string currid = this.Id;
+            //            XElement element = document.XPathSelectElement(string.Format("//*[@id='{0}']", currid));
+            //            if (element == null)
+            //                throw new UIAutomationElementNotFoundException("从结构树获取当前XElement元素失败！");
+            //
+            //            XElement xElement = element.XPathSelectElement(xpath);
+            //            if (xElement == null)
+            //            {
+            //                throw new UIAutomationElementNotFoundException("未找到XElement 元素！");
+            //
+            //            }
+            //
+            //            XAttribute xAttribute = xElement.Attribute("Id");
+            //            if (xAttribute == null)
+            //                throw new Exception("从XElement属性节点获取引用Id失败！");
+            //            string id = xAttribute.Value;
+            //            UIAutomationElement uiAutomationElement = _driver.GetUiAutomationElementTreeLocalcache().GetLocalcache(id);
+            //            return uiAutomationElement;
+            return uiAutomationDocumentContext.QuerySelectElementByXpath(xpath, this.id);
+        }
+
+        public IList<UIAutomationElement> FindElementsByXpath(string xpath)
+        {
+            //            string xml = _driver.GetPageSource();
+            //            XDocument document = XDocument.Load(xml);
+            //            string currid = this.Id;
+            //            XElement element = document.XPathSelectElement(string.Format("//*[@id='{0}']", currid));
+            //            if (element == null)
+            //                throw new UIAutomationElementNotFoundException("从结构树获取当前XElement元素失败！");
+            //
+            //            IEnumerable<XElement> xElements = element.XPathSelectElements(xpath);
+            //            if (xElements == null)
+            //            {
+            //                throw new UIAutomationElementNotFoundException("未找到XElement 元素集！");
+            //
+            //            }
+            //
+            //            IEnumerator<XElement> enumerator = xElements.GetEnumerator();
+            //            IList<UIAutomationElement> elements = new List<UIAutomationElement>();
+            //            do
+            //            {
+            //                XElement current = enumerator.Current;
+            //                XAttribute xAttribute = current.Attribute("Id");
+            //                if (xAttribute == null)
+            //                    continue;
+            //                string id = xAttribute.Value;
+            //                UIAutomationElement uiAutomationElement = _driver.GetUiAutomationElementTreeLocalcache().GetLocalcache(id);
+            //                elements.Add(uiAutomationElement);
+            //            } while (enumerator.MoveNext());
+            //
+            //
+            //
+            //
+            //            return elements;
+            UIAutomationDocumentContext uiAutomationDocumentContext = _driver.GetAutomationDocumentContext();
+            return uiAutomationDocumentContext.QuerySelectElemenstByXpath(xpath, this.id);
+
         }
     }
 }
