@@ -17,7 +17,7 @@
 
 暂不支持屏幕录制、截屏操作，对于 Windows 平台可以自行使用 ffmpeg 集成。
 
-支持了类似 fromework中 UIAutomationElementCondition 的条件构建器。
+支持了类似 framework中 UIAutomationElementCondition 的条件构建器。
 
 不完整的 UIAutomationElement Control Type 支持，由于 Windows 平台控件的行为不唯一性，就没有进行封装
 
