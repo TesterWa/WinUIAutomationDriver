@@ -21,7 +21,7 @@
 
 不完整的 UIAutomationElement Control Type 支持，由于 Windows 平台控件的行为不唯一性，就没有进行封装
 
-实验性功能：自动窗口管理，类似于 seleniium的 windowhandles
+实验性功能：自动窗口管理，类似于 selenium的 windowhandles
 
 开始使用 
 
